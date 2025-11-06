@@ -2,9 +2,18 @@ import { InferenceClient } from "@huggingface/inference";
 import { NextRequest } from "next/server";
 
 
+let activeRequests = 0;
+const maxConcurrent = 3;
+const queue: (() => void)[] = [];
+const maxQueueSize = 10;
+
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
+
+   const startProcessing = async () => {
+    activeRequests++; 
+
   try {
     const { content, task } = await req.json();
 
@@ -124,7 +133,21 @@ export async function POST(req: NextRequest) {
             message: "Task failed. Check model or content.",
           });
           controller.close();
-        }
+        }finally{
+             activeRequests--;
+            if (queue.length > 0) {
+              const next = queue.shift();
+              next && next(); 
+            }
+      
+
+        } 
+                
+
+
+
+
+
       },
     });
 
@@ -151,4 +174,30 @@ export async function POST(req: NextRequest) {
       return new Response(JSON.stringify({ status: "error", message: error.message || "Unknown error" }), { status });
   }
 }
+
+    
+  }
+if (activeRequests >= maxConcurrent) {
+    if (queue.length >= maxQueueSize) {
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Queue full. Please try again later.",
+        }),
+        { status: 429 }
+      );
+    }
+
+    const position = queue.length + 1;
+    console.log('position', position)
+    return new Promise((resolve) => {
+      queue.push(async () => {
+        const res = await startProcessing();
+        resolve(res);
+      });
+    }).then((res: any) => res as Response);
+  }
+
+
+  return startProcessing();
 }
