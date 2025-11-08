@@ -1,203 +1,102 @@
-import { InferenceClient } from "@huggingface/inference";
+import { queueRequest } from "@/helpers/queueHelper";
+import { createStream } from "@/helpers/streamHelper";
+import { handleNER, handleSentiment, handleSummarization } from "@/services/huggingFaceService";
 import { NextRequest } from "next/server";
 
-
-let activeRequests = 0;
-const maxConcurrent = 3;
-const queue: (() => void)[] = [];
-const maxQueueSize = 10;
-
 export const runtime = "edge";
-
-export async function POST(req: NextRequest) {
-
-   const startProcessing = async () => {
-    activeRequests++; 
-
-  try {
-    const { content, task } = await req.json();
-
-    if (!content) return new Response("Missing content", { status: 400 });
-    if (!task) return new Response("Missing task type", { status: 400 });
-
-    const client = new InferenceClient(process.env.HUGGINGFACE_API_TOKEN);
-
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const send = (data: any) =>
-          controller.enqueue(
-            new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`)
-          );
-
-        try {
-          switch (task) {
-     
-            case "summarization": {
-              send({ status: "processing", step: "summarization_start" });
-              const result = await client.summarization({
-                model: "facebook/bart-large-cnn",
-                inputs: content,
-              });
-
-              const summary = result.summary_text || "";
-              const words = summary.split(" ");
-              for (const word of words) {
-                send({ task: "summarization", chunk: word });
-                await new Promise((r) => setTimeout(r, 80));
-              }
-
-              send({
-                task: "summarization",
-                done: true,
-                result: summary,
-              });
-          break ;
-            }
-
-          
-            case "sentiment": {
-              send({ status: "processing", step: "sentiment_start" });
-              const result = await client.textClassification({
-                model: "distilbert-base-uncased-finetuned-sst-2-english",
-                inputs: content,
-              });
-
-              // optional: simulate token streaming for realism
-              send({ task: "sentiment", progress: "analyzing" });
-              await new Promise((r) => setTimeout(r, 80));
-
-              const sentiment = result?.[0]
-                ? {
-                    label: result[0].label,
-                    score: result[0].score,
-                  }
-                : null;
-                  console.log('sentiment pass')
-              send({
-                task: "sentiment",
-                done: true,
-                result: sentiment,
-              });
-              break;
-            }
-  
-        
-            case "ner": {
-              send({ status: "processing", step: "ner_start" });
-              const result = await client.tokenClassification({
-                model: "dslim/bert-base-NER",
-                inputs: content,
-              });
-       
-          console.log('ner pass' ,result)
-              for (const entity of result) {
-                send({
-                  task: "ner",
-                  entity: {
-                    type: entity.entity_group,
-                    value: entity.word,
-                    score:entity.score
-                  },
-                });
-                console.log('result d', result ,entity)
-                await new Promise((r) => setTimeout(r, 80));
-              }
-
-              const entities =
-                result?.map((e) => ({
-                  type: e.entity_group,
-                  value: e.word,
-                })) || [];
-             console.log('result', result)
-              send({
-                task: "ner",
-                done: true,
-                result: entities,
-              });
-              break;
-            }
-
-            default:
-              send({ status: "error", message: "Invalid task type" });
-              break;
-          }
-
-          send({ status: "completed" });
-          send("[DONE]");
-          controller.close();
-        } catch (err) {
-          console.error(err);
-          send({
-            status: "error",
-            message: "Task failed. Check model or content.",
-          });
-          controller.close();
-        }finally{
-             activeRequests--;
-            if (queue.length > 0) {
-              const next = queue.shift();
-              next && next(); 
-            }
-      
-
-        } 
-                
-
-
-
-
-
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      },
-    });
-  }  catch (error: any) {
-  const status = error?.httpResponse?.status || 500;
+interface CustomError {
+  message?: string;
+  httpResponse?: {
+    status?: number;
+  };
+}
+function handleError(error: any): Response {
+  const err = error as CustomError
+  const status = err.httpResponse?.status || 500;
 
   switch (status) {
     case 401:
-      return new Response("Not authorized", { status: 401 });
+      return new Response(
+        JSON.stringify({ status: "error", message: "Not authorized" }),
+        { status: 401 }
+      );
     case 429:
-      
-      return new Response(JSON.stringify({ status: "error", message: "Rate limit, try later" }), { status: 429 });
-    case 503:
-     
-      return new Response(JSON.stringify({ status: "error", message: "Model warming up, retry in 20s" }), { status: 503 });
-    default:
-      return new Response(JSON.stringify({ status: "error", message: error.message || "Unknown error" }), { status });
-  }
-}
-
-    
-  }
-if (activeRequests >= maxConcurrent) {
-    if (queue.length >= maxQueueSize) {
       return new Response(
         JSON.stringify({
           status: "error",
-          message: "Queue full. Please try again later.",
+          message: "Rate limit exceeded. Try again later.",
         }),
         { status: 429 }
       );
-    }
-
-    const position = queue.length + 1;
-    console.log('position', position)
-    return new Promise((resolve) => {
-      queue.push(async () => {
-        const res = await startProcessing();
-        resolve(res);
-      });
-    }).then((res: any) => res as Response);
+    case 503:
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Model warming up. Please retry in 20 seconds.",
+        }),
+        { status: 503 }
+      );
+    default:
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: error?.message || "Unknown server error.",
+        }),
+        { status }
+      );
   }
+}
 
+export async function POST(req: NextRequest) {
+  try {
+    const { content, task } = await req.json();
+    if (!content)
+      return new Response("Missing content", { status: 400 });
+    if (!task)
+      return new Response("Missing task type", { status: 400 });
 
-  return startProcessing();
+    return queueRequest(async () => {
+      const { stream, send, close } = createStream();
+
+      (async () => {
+        try {
+          switch (task) {
+            case "summarization":
+              await handleSummarization(content, send);
+              break;
+            case "sentiment":
+              await handleSentiment(content, send);
+              break;
+            case "ner":
+              await handleNER(content, send);
+              break;
+            default:
+              send({ status: "error", message: "Invalid task type" });
+          }
+
+          send({ status: "completed" });
+        } catch (error:any) {
+          console.error("Task error:", error);
+          send({
+            status: "error",
+            message: error?.message || "Task failed.",
+          });
+        } finally {
+          send("[DONE]");
+          close();
+        }
+      })();
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Global error:", error);
+    return handleError(error);
+  }
 }
