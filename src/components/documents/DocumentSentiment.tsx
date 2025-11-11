@@ -12,17 +12,17 @@ export default function DocumentSentiment({ sentiment }: SentimentProps) {
   const { label, score } = sentiment;
   const confidence = (score * 100).toFixed(1);
 
-  let color = "text-gray-600";
+  let color = "text-gray-800";
   let emoji = "😐";
 
   if (label === "POSITIVE" && score > 0.7) {
-    color = "text-green-600";
+    color = "text-green-800";
     emoji = "😊";
   } else if (label === "NEGATIVE" && score > 0.7) {
-    color = "text-red-600";
+    color = "text-red-800";
     emoji = "😡";
   } else {
-    color = "text-yellow-600";
+    color = "text-yellow-800";
     emoji = "😐";
   }
 

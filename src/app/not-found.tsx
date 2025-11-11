@@ -1,9 +1,9 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
+
 
 export default function NotFound() {
   return (
@@ -15,11 +15,13 @@ export default function NotFound() {
           <h2 className="text-2xl font-semibold text-gray-700">
             Page Not Found
           </h2>
-          <p className="text-gray-500">
+          <p className="text-gray-800">
             Sorry, we couldn’t find the page you’re looking for.
           </p>
           <Button asChild className="mt-4">
-            <Link href="/">Go back home</Link>
+            <Link href="/" aria-label="Go back to the homepage">
+              Go back home
+            </Link>
           </Button>
         </CardContent>
       </Card>

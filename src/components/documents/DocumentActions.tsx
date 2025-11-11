@@ -45,6 +45,7 @@ const uniqueId = useId();
               e.target.value as "summarization" | "sentiment" | "ner"
             )
           }
+          aria-label="Choose analysis task"
           className="border rounded-md px-2 py-1 text-sm"
         >
           <option value="summarization">🧠 Summarize</option>
@@ -53,6 +54,7 @@ const uniqueId = useId();
         </select>
 
       <Button
+        aria-label="Re-analyze the document "
         size="sm"
         onClick={() => handleReanalyze(documentId, selectedTask)}
         className={getButtonStyle()}
@@ -61,9 +63,11 @@ const uniqueId = useId();
       </Button>
 
       <Button
+      name="view-button"
         size="sm"
         variant="outline"
         onClick={() => router.push(`/document/${documentId}`)}
+        aria-label="View details for document "
       >
         View Details
       </Button>

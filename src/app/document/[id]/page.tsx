@@ -1,13 +1,13 @@
 import DocumentDetails from "@/components/documentDetalis/DocumentDetalis";
 import DocumentDetailsSkeleton from "@/components/documentDetalis/DocumentSkeleton";
+import DocumentNotFound from "@/components/documentDetalis/NotFoundDocument";
 import { getDocumentById } from "@/services/showdocument";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 
 async function DocumentContent({ id }: { id: string }) {
   const doc = await getDocumentById(id);
-  if (!doc) return notFound();
+  if (!doc) return <DocumentNotFound/>;
 
   return <DocumentDetails doc={doc} />;
 }

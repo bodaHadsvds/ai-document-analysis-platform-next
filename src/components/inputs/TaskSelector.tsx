@@ -8,9 +8,9 @@ export const TaskSelector: React.FC<TaskSelectorProps> = ({
   setSelectedTask,
 }) => {
   const tasks = [
-    { id: "summarization", label: "Summarization", color: "text-blue-600" },
-    { id: "sentiment", label: "Sentiment", color: "text-green-600" },
-    { id: "ner", label: "Entities", color: "text-orange-600" },
+    { id: "summarization", label: "Summarization", color: "text-blue-800" },
+    { id: "sentiment", label: "Sentiment", color: "text-green-800" },
+    { id: "ner", label: "Entities", color: "text-orange-800" },
   ];
 
   return (

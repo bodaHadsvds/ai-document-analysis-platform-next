@@ -14,7 +14,7 @@ export default function DocumentEntities({ entities }: { entities: Entity[] }) {
             key={i}
             className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium"
           >
-            {e.value} <span className="text-gray-500">({e.type})</span>
+            {e.value} <span className="text-gray-800">({e.type})</span>
           </span>
         ))}
       </div>
