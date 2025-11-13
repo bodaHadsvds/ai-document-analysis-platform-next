@@ -26,9 +26,9 @@ export async function queueRequest(fn: () => Promise<Response>): Promise<Respons
     return await fn();
   } finally {
     activeRequests--;
-    if (queue.length > 0) {
-      const next = queue.shift();
-      next && next();
-    }
+ if (queue.length > 0) {
+  const next = queue.shift();
+  next?.();
+}
   }
 }

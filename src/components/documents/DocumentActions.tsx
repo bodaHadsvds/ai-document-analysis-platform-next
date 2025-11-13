@@ -1,15 +1,17 @@
 "use client";
+import { TaskType } from "@/types/document";
+import { useRouter } from "next/navigation";
 import { useId } from "react";
 import { Button } from "../ui/button";
 
 interface DocumentActionsProps {
   documentId: string;
-  selectedTask: "summarization" | "sentiment" | "ner";
+  selectedTask: TaskType;
   setSelectedTask: React.Dispatch<
-    React.SetStateAction<"summarization" | "sentiment" | "ner">
+    React.SetStateAction<TaskType>
   >;
-  handleReanalyze: (id: string, task: "summarization" | "sentiment" | "ner") => void;
-  router: any;
+  handleReanalyze: (id: string, task:TaskType) => void;
+  
 }
 
 export default function DocumentActions({
@@ -17,9 +19,9 @@ export default function DocumentActions({
   selectedTask,
   setSelectedTask,
   handleReanalyze,
-  router,
+ 
 }: DocumentActionsProps) {
-  
+   const router = useRouter();
 const uniqueId = useId(); 
   const getButtonStyle = () => {
     switch (selectedTask) {

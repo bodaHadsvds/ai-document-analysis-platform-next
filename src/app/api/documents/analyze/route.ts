@@ -12,15 +12,23 @@ interface CustomError {
   httpResponse?: { status?: number };
 }
 
-function handleError(error: any): Response {
-  const err = error as CustomError;
-  const status = err.httpResponse?.status || 500;
+function handleError(error:unknown): Response {
+  
+let status = 500;
+let message = "Unknown server error.";
+
+if (error instanceof Error) {
+  message = error.message;
+} else if ((error as CustomError).message) {
+  message = (error as CustomError).message!;
+  status = (error as CustomError).httpResponse?.status || 500;
+}
 
   switch (status) {
     case 401: return new Response(JSON.stringify({ status: "error", message: "Not authorized" }), { status: 401 });
     case 429: return new Response(JSON.stringify({ status: "error", message: "Rate limit exceeded. Try again later." }), { status: 429 });
     case 503: return new Response(JSON.stringify({ status: "error", message: "Model warming up. Please retry in 20 seconds." }), { status: 503 });
-    default: return new Response(JSON.stringify({ status: "error", message: error?.message || "Unknown server error." }), { status });
+    default: return new Response(JSON.stringify({ status: "error", message: message || "Unknown server error." }), { status });
   }
 }
 
@@ -50,9 +58,14 @@ export async function POST(req: NextRequest) {
           }
 
           send({ status: "completed" });
-        } catch (error:any) {
-          console.error("Task error:", error);
-          send({ status: "error", message: error?.message || "Task failed." });
+        } catch (error) {
+     if (error instanceof Error) {
+    console.error("Task error:", error);
+    send({ status: "error", message: error.message });
+  } else {
+    console.error("Task error:", error);
+    send({ status: "error", message: "Task failed." });
+  }
         } finally {
           send("[DONE]");
           close();

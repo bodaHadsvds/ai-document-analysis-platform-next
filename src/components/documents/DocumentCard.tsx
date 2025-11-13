@@ -1,6 +1,5 @@
 "use client";
-import { DocumentProps } from "@/types/document";
-import { useRouter } from "next/navigation";
+import { DocumentProps, TaskType } from "@/types/document";
 import { useState } from "react";
 import { Card } from "../ui/card";
 import DocumentActions from "./DocumentActions";
@@ -19,10 +18,10 @@ function DocumentCard({
   onDelete,
   handleReanalyze,
 }: DocumentProps) {
-  const router = useRouter();
+ 
   const wordCount = document.content.trim().split(/\s+/).length;
   const [selectedTask, setSelectedTask] = useState<
-    "summarization" | "sentiment" | "ner"
+   TaskType
   >("summarization");
 
   return (
@@ -46,7 +45,7 @@ function DocumentCard({
             selectedTask={selectedTask}
             setSelectedTask={setSelectedTask}
             handleReanalyze={handleReanalyze}
-            router={router}
+        
           />
         )}
 
