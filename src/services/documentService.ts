@@ -1,9 +1,13 @@
+import { AnalysisData } from "@/types/document";
+
+
+
 
 
 export async function streamAnalysis(
   content: string,
   task: string,
-  onMessage: (data: any) => void
+  onMessage: (data: AnalysisData) => void 
 ) {
   const res = await fetch("/api/documents/analyze", {
     method: "POST",

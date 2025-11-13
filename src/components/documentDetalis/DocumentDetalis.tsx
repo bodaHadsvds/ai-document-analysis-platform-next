@@ -13,9 +13,9 @@ export default function DocumentDetails({ doc }: { doc: DocumentData }) {
 
       <DocumentSummary summary={doc.summary} confidence={doc.confidence} />
       <DocumentSentiment label={doc.sentiment.label} score={doc.sentiment.score} />
-      <DocumentEntities entities={doc.entities} />
+      <DocumentEntities  entities={doc.entities?.map(e => ({ type: e.type, text: e.value })) || []} />
       <DocumentKeywords keywords={doc.keywords} />
-      <DocumentOriginalText text={doc.text} entities={doc.entities} />
+      <DocumentOriginalText text={doc.text}  entities={doc.entities?.map(e => ({ type: e.type, text: e.value })) || []} />
     </div>
   );
 }

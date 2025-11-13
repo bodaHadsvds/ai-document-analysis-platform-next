@@ -15,7 +15,7 @@ export default function Error({ error, reset }: ErrorProps) {
       <p className="text-gray-600 mb-4">{error.message}</p>
       <button
        type="button"
-  aria-label="Try again"
+       aria-label="Try again"
         onClick={() => reset()}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
       >

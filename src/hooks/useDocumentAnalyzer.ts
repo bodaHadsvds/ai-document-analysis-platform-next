@@ -3,7 +3,7 @@
 import { documentSchema } from "@/validation/documentSchema";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { DocumentItem } from "../types/document";
+import { DocumentItem, TaskType } from "../types/document";
 import { useSSEAnalyzer } from "./useAnalyzer";
 import { useDocumentsStore } from "./useDocumentStates";
 
@@ -14,7 +14,7 @@ export function useDocumentAnalyzer() {
   const [newText, setNewText] = useState("");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
-const [selectedTask, setSelectedTask] = useState<"summarization" | "sentiment" | "ner">("summarization");
+const [selectedTask, setSelectedTask] = useState<TaskType>("summarization");
 
   const handleAddText = () => {
    const result = documentSchema.safeParse({ content: newText, task: selectedTask });
@@ -68,7 +68,7 @@ const [selectedTask, setSelectedTask] = useState<"summarization" | "sentiment" |
     analyzeDocument(newDoc ,selectedTask);
       setUploading(false);
   };
- const handleReanalyze = (id: string ,task: "summarization" | "sentiment" | "ner") => {
+ const handleReanalyze = (id: string ,task:TaskType) => {
     const doc = documents.find((d) => d.id === id);
     if (doc) analyzeDocument(doc ,task);
   };

@@ -1,13 +1,15 @@
+import { TaskType } from "@/types/document";
+
 interface TaskSelectorProps {
-  selectedTask: "summarization" | "sentiment" | "ner";
-  setSelectedTask: (value: "summarization" | "sentiment" | "ner") => void;
+  selectedTask:TaskType;
+  setSelectedTask: (value: TaskType) => void;
 }
 
 export const TaskSelector: React.FC<TaskSelectorProps> = ({
   selectedTask,
   setSelectedTask,
 }) => {
-  const tasks = [
+  const tasks : { id: TaskType; label: string; color: string }[] = [
     { id: "summarization", label: "Summarization", color: "text-blue-800" },
     { id: "sentiment", label: "Sentiment", color: "text-green-800" },
     { id: "ner", label: "Entities", color: "text-orange-800" },
@@ -27,7 +29,7 @@ export const TaskSelector: React.FC<TaskSelectorProps> = ({
               id={`task-${id}`}
             value={id}
             checked={selectedTask === id}
-            onChange={() => setSelectedTask(id as any)}
+            onChange={() => setSelectedTask(id)}
           />
           <span className={`${color} font-medium`}>{label}</span>
         </label>

@@ -1,9 +1,13 @@
+type statusType ="idle" | "processing" | "completed" | "error";
+export type TaskType = "summarization" | "sentiment" | "ner";
+export type EntityType = "PERSON" | "ORG" | "LOCATION" | "DATE" | "EVENT" | "OTHER";
+type sentimentLabel = "Positive" | "Negative" | "Neutral";
 export interface DocumentItem {
   id: string;
   title: string;
   content: string;
   createdAt: string;
-  status: "idle" | "processing" | "completed" | "error";
+  status: statusType
   summary?: string;
   sentiment?: { label: string; score: number };
   entities?: { type: string; value: string }[];
@@ -14,15 +18,15 @@ export interface DocumentProps {
   document: DocumentItem;
   onUpdateTitle: (id: string, newTitle: string) => void;
   onDelete: (id: string) => void;
-   handleReanalyze: (id: string ,task:"summarization" | "sentiment" | "ner") => void; 
+   handleReanalyze: (id: string ,task:TaskType) => void; 
 }
 export interface StatusBadgeProps {
-  status: 'idle' | 'processing' | 'completed' | 'error';
+  status: statusType
 }
-export type EntityType = "PERSON" | "ORG" | "LOCATION" | "DATE" | "EVENT" | "OTHER";
+
 export interface Entity {
   type: EntityType;
-  text: string;
+  value: string;
 }
 
 export interface DocumentData {
@@ -32,7 +36,7 @@ export interface DocumentData {
   summary: string;
   confidence: number;
   sentiment: {
-    label: "Positive" | "Negative" | "Neutral";
+    label: sentimentLabel
     score: number;
   };
 
@@ -52,3 +56,52 @@ export type SendData =
   | { task: "summarization"; done: boolean; result: string }
   | { task: "sentiment"; done: boolean; result: { label: string; score: number } | null }|
       { status: "error", message: string } |  { status: "completed" } |         "[DONE]"; 
+
+
+
+interface SummarizationData {
+  task: "summarization";
+  chunk?: string;
+  done?: boolean;
+  result?: string;
+  status: "processing" | "completed" | "error";
+  message?: string;
+}
+
+interface SentimentResult {
+  label: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+  score: number;
+}
+
+interface SentimentData {
+  task: "sentiment";
+  done: boolean;
+  result: SentimentResult;
+  status: "processing" | "completed" | "error";
+  message?: string;
+}
+
+
+
+interface NerData {
+  task: "ner";
+  entity: Entity 
+  done: boolean;
+  result: Entity[];
+  status: "processing" | "completed" | "error";
+  message?: string;
+}
+
+interface ErrorData {
+  status: "error";
+  message: string;
+  task: TaskType;
+}
+
+export type AnalysisData =
+  | SummarizationData
+  | SentimentData
+  | NerData
+  | ErrorData;
+
+

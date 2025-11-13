@@ -2,21 +2,34 @@
 
 import { streamAnalysis } from "@/services/documentService";
 import { toast } from "sonner";
-import { DocumentItem } from "../types/document";
+import { AnalysisData, DocumentItem, TaskType } from "../types/document";
 import { useDocumentsStore } from "./useDocumentStates";
 
-export function useSSEAnalyzer(
 
-) {
+export function useSSEAnalyzer() {
   const updateDocument = useDocumentsStore((state) => state.updateDocument);
-  const analyzeDocument = async (
-    doc: DocumentItem,
-    task: "summarization" | "sentiment" | "ner"
-  ) => {
-    updateDocument(doc.id, (current) => ({ ...current, status: "processing" }));
+
+  const analyzeDocument = async (doc: DocumentItem, task: TaskType) => {
+    updateDocument(doc.id, (current) => ({
+      ...current,
+      status: "processing",
+    }));
 
     try {
-      await streamAnalysis(doc.content, task, (data) => {
+      await streamAnalysis(doc.content, task, (data: AnalysisData ) => {
+        
+     
+        if (data.status === "error") {
+          updateDocument(doc.id, (current) => ({
+            ...current,
+            status: "error",
+            errorMessage: data.message,
+          }));
+          toast.error(`❌ Error analyzing "${doc.title}"`);
+          return;
+        }
+
+    
         switch (data.task) {
           case "summarization":
             if (data.chunk) {
@@ -25,6 +38,7 @@ export function useSSEAnalyzer(
                 summary: (current.summary || "") + " " + data.chunk,
               }));
             }
+
             if (data.done) {
               updateDocument(doc.id, (current) => ({
                 ...current,
@@ -38,14 +52,19 @@ export function useSSEAnalyzer(
           case "sentiment":
             if (data.done && data.result) {
               const { label, score } = data.result;
-              let color = "gray",
-                emoji = "😐";
+              let color = "gray";
+              let emoji = "😐";
 
-              if (label === "POSITIVE" && score > 0.8)
-                (color = "green"), (emoji = "😊");
-              else if (label === "NEGATIVE" && score > 0.8)
-                (color = "red"), (emoji = "😡");
-              else (color = "yellow"), (emoji = "😐");
+              if (label === "POSITIVE" && score > 0.8) {
+                color = "green";
+                emoji = "😊";
+              } else if (label === "NEGATIVE" && score > 0.8) {
+                color = "red";
+                emoji = "😡";
+              } else {
+                color = "yellow";
+                emoji = "😐";
+              }
 
               updateDocument(doc.id, (current) => ({
                 ...current,
@@ -62,11 +81,13 @@ export function useSSEAnalyzer(
 
           case "ner":
             if (data.entity) {
+             
               updateDocument(doc.id, (current) => ({
                 ...current,
                 entities: [...(current.entities || []), data.entity],
               }));
             }
+
             if (data.done) {
               updateDocument(doc.id, (current) => ({
                 ...current,
@@ -78,26 +99,24 @@ export function useSSEAnalyzer(
             break;
 
           default:
-            if (data.status === "error") {
-              updateDocument(doc.id, (current) => ({
-                ...current,
-                status: "error",
-                errorMessage: data.message,
-              }));
-              toast.error(`❌ Error analyzing "${doc.title}"`);
-            }
+        
+            const _exhaustive: never = data;
+            return _exhaustive;
         }
       });
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
+
       updateDocument(doc.id, (current) => ({
         ...current,
         status: "error",
-        errorMessage: err.message,
+        errorMessage,
       }));
-      toast.error(`Error: ${err.message}`);
+
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
   return { analyzeDocument };
 }
-
