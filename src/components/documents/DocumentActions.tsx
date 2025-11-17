@@ -1,4 +1,5 @@
 "use client";
+import { useLoadingStore } from "@/hooks/useLoading";
 import { TaskType } from "@/types/document";
 import { useRouter } from "next/navigation";
 import { useId } from "react";
@@ -23,6 +24,12 @@ export default function DocumentActions({
 }: DocumentActionsProps) {
    const router = useRouter();
 const uniqueId = useId(); 
+ const startLoading = useLoadingStore((s) => s.startLoading);
+const handleNavigate=()=>{
+  router.push(`/document/${documentId}`)
+startLoading()
+
+}
   const getButtonStyle = () => {
     switch (selectedTask) {
       case "summarization":
@@ -65,10 +72,10 @@ const uniqueId = useId();
       </Button>
 
       <Button
-      name="view-button"
+        name="view-button"
         size="sm"
         variant="outline"
-        onClick={() => router.push(`/document/${documentId}`)}
+        onClick={() => handleNavigate()}
         aria-label="View details for document "
       >
         View Details
