@@ -8,11 +8,8 @@ import { Button } from "../ui/button";
 interface DocumentActionsProps {
   documentId: string;
   selectedTask: TaskType;
-  setSelectedTask: React.Dispatch<
-    React.SetStateAction<TaskType>
-  >;
-  handleReanalyze: (id: string, task:TaskType) => void;
-  
+  setSelectedTask: React.Dispatch<React.SetStateAction<TaskType>>;
+  handleReanalyze: (id: string, task: TaskType) => void;
 }
 
 export default function DocumentActions({
@@ -20,16 +17,14 @@ export default function DocumentActions({
   selectedTask,
   setSelectedTask,
   handleReanalyze,
- 
 }: DocumentActionsProps) {
-   const router = useRouter();
-const uniqueId = useId(); 
- const startLoading = useLoadingStore((s) => s.startLoading);
-const handleNavigate=()=>{
-  router.push(`/document/${documentId}`)
-startLoading()
-
-}
+  const router = useRouter();
+  const uniqueId = useId();
+  const startLoading = useLoadingStore((s) => s.startLoading);
+  const handleNavigate = () => {
+    router.push(`/document/${documentId}`);
+    startLoading();
+  };
   const getButtonStyle = () => {
     switch (selectedTask) {
       case "summarization":
@@ -45,22 +40,22 @@ startLoading()
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3">
-        <select
+      <select
         id={`${uniqueId}-task`}
         name="task"
-          value={selectedTask}
-          onChange={(e) =>
-            setSelectedTask(
-              e.target.value as "summarization" | "sentiment" | "ner"
-            )
-          }
-          aria-label="Choose analysis task"
-          className="border rounded-md px-2 py-1 text-sm"
-        >
-          <option value="summarization">🧠 Summarize</option>
-          <option value="sentiment">😊 Sentiment</option>
-          <option value="ner">🏷️ Entities</option>
-        </select>
+        value={selectedTask}
+        onChange={(e) =>
+          setSelectedTask(
+            e.target.value as "summarization" | "sentiment" | "ner"
+          )
+        }
+        aria-label="Choose analysis task"
+        className="border rounded-md px-2 py-1 text-sm"
+      >
+        <option value="summarization">🧠 Summarize</option>
+        <option value="sentiment">😊 Sentiment</option>
+        <option value="ner">🏷️ Entities</option>
+      </select>
 
       <Button
         aria-label="Re-analyze the document "

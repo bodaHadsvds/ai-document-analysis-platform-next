@@ -21,12 +21,17 @@ export const TextareaSection: React.FC<TextareaSectionProps> = ({
         maxLength={5000}
         onChange={(e) => setNewText(e.target.value)}
         className="
-          min-h-[120px] 
+          min-h-[120px]   
           bg-gray-100 text-gray-800 
-          border border-gray-300 rounded-md p-2
-          focus:outline-none focus:border-gray-300 focus:ring-0
+          border
+          border-gray-300 rounded-md p-2
           resize-none
-        "
+          outline-none
+          transition-all duration-200
+          focus:bg-white            
+          focus:outline-none
+          focus:shadow-[0_0_18px_rgba(59,130,245,0.5)]  
+      "
       />
       {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
     </div>
